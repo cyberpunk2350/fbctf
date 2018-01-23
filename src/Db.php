@@ -16,23 +16,50 @@ class Db {
 
   private function __construct() {
     $this->config = parse_ini_file($this->settings_file);
-    $this->pool = new AsyncMysqlConnectionPool(array());
+    $options = array(
+      'idle_timeout_micros' => 200000,
+      'expiration_policy' => 'IdleTime',
+    );
+    $this->pool = new AsyncMysqlConnectionPool($options);
   }
 
   private function __clone(): void {}
+
+  public static function getDatabaseStats(): array<string, mixed> {
+    $db = self::getInstance();
+    return $db->pool->getPoolStats();
+  }
 
   public function getBackupCmd(): string {
     $usr = must_have_idx($this->config, 'DB_USERNAME');
     $pwd = must_have_idx($this->config, 'DB_PASSWORD');
     $db = must_have_idx($this->config, 'DB_NAME');
-    $backup_cmd = 'mysqldump --add-drop-database -u '.escapeshellarg($usr).' --password='.escapeshellarg($pwd).' '.escapeshellarg($db);
+    $backup_cmd =
+      'mysqldump --add-drop-database -u '.
+      escapeshellarg($usr).
+      ' --password='.
+      escapeshellarg($pwd).
+      ' '.
+      escapeshellarg($db);
     return $backup_cmd;
   }
 
+  public function getRestoreCmd(): string {
+    $usr = must_have_idx($this->config, 'DB_USERNAME');
+    $pwd = must_have_idx($this->config, 'DB_PASSWORD');
+    $db = must_have_idx($this->config, 'DB_NAME');
+    $restore_cmd =
+      'mysql -u '.
+      escapeshellarg($usr).
+      ' --password='.
+      escapeshellarg($pwd).
+      ' '.
+      escapeshellarg($db);
+    return $restore_cmd;
+  }
+
   public async function genConnection(): Awaitable<AsyncMysqlConnection> {
-    if (!$this->isConnected()) {
-      await $this->genConnect();
-    }
+    await $this->genConnect();
     invariant($this->conn !== null, 'Connection cant be null.');
     return $this->conn;
   }
@@ -52,12 +79,7 @@ class Db {
     $username = must_have_idx($this->config, 'DB_USERNAME');
     $password = must_have_idx($this->config, 'DB_PASSWORD');
 
-    $this->conn = await $this->pool->connect(
-      $host,
-      (int)$port,
-      $db_name,
-      $username,
-      $password,
-    );
+    $this->conn = await $this->pool
+      ->connect($host, (int) $port, $db_name, $username, $password);
   }
 }

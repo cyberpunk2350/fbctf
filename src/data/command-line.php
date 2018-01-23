@@ -1,13 +1,14 @@
 <?hh // strict
 
-require_once($_SERVER['DOCUMENT_ROOT'] . '/../vendor/autoload.php');
-
-/* HH_IGNORE_ERROR[1002] */
-SessionUtils::sessionStart();
-SessionUtils::enforceLogin();
+require_once ($_SERVER['DOCUMENT_ROOT'].'/../vendor/autoload.php');
 
 class CommandsController extends DataController {
   public async function genGenerateData(): Awaitable<void> {
+
+    /* HH_IGNORE_ERROR[1002] */
+    SessionUtils::sessionStart();
+    SessionUtils::enforceLogin();
+
     // Object to hold all the data.
     $commands_line_data = (object) array();
 
@@ -15,12 +16,29 @@ class CommandsController extends DataController {
     $results_library = (object) array();
     $results_library_key = "results_library";
 
+    list(
+      $all_levels,
+      $all_enabled_countries,
+      $all_visible_teams,
+      $all_categories,
+    ) = await \HH\Asio\va(
+      Level::genAllLevels(),
+      Country::genAllEnabledCountries(),
+      MultiTeam::genAllVisibleTeams(),
+      Category::genAllCategories(),
+    );
+
+    $levels_map = Map {};
+    foreach ($all_levels as $level) {
+      $levels_map[$level->getEntityId()] = $level;
+    }
+
     // List of active countries.
     $countries_results = array();
     $countries_key = "country_list";
-    $all_enabled_countries = await Country::genAllEnabledCountries();
     foreach ($all_enabled_countries as $country) {
-      $is_active_level = await $country::genIsActiveLevel(intval($country->getId()));
+      $level = $levels_map->get($country->getId());
+      $is_active_level = $level !== null && $level->getActive();
       if ($country->getUsed() && $is_active_level) {
         array_push($countries_results, $country->getName());
       }
@@ -28,14 +46,19 @@ class CommandsController extends DataController {
 
     // List of modules
     $modules_results = array(
-      "All", "Leaderboard", "Announcements", "Activity", "Teams", "Filter", "Game Clock"
+      "All",
+      "Leaderboard",
+      "Announcements",
+      "Activity",
+      "Teams",
+      "Filter",
+      "Game Clock",
     );
     $modules_key = "modules";
 
     // List of active teams.
     $teams_results = array();
     $teams_key = "teams";
-    $all_visible_teams = await Team::genAllVisibleTeams();
     foreach ($all_visible_teams as $team) {
       array_push($teams_results, $team->getName());
     }
@@ -43,13 +66,13 @@ class CommandsController extends DataController {
     // List of level categories.
     $categories_results = array();
     $categories_key = "categories";
-    $all_categories = await Category::genAllCategories();
     foreach ($all_categories as $category) {
       array_push($categories_results, $category->getCategory());
     }
     array_push($categories_results, "All");
 
-    /* HH_FIXME[1002] */ /* HH_FIXME[2011] */
+    /* HH_FIXME[1002] */
+    /* HH_FIXME[2011] */
     $results_library->{$countries_key} = $countries_results;
     $results_library->{$modules_key} = $modules_results;
     $results_library->{$teams_key} = $teams_results;
@@ -114,4 +137,4 @@ class CommandsController extends DataController {
 }
 
 $cmd = new CommandsController();
-\HH\Asio\join($cmd->genGenerateData());
+$cmd->sendData();

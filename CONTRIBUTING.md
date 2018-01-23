@@ -5,24 +5,21 @@ to do this once to work on any of Facebook's open source projects.
 
 Complete your CLA here: <https://code.facebook.com/cla>
 
-## Reporting an Issue
-
-First, ensure the issue was not already reported by doing a search. If you cannot find an existing issue, create a new issue. Make the title and description as clear as possible, and include a test case or screenshot to reproduce or illustrate the problem if possible.
-
-Check for error messages in `/var/log/hhvm/error.log`, and if you see any, please add them to your issue.
-
 ## Submitting a PR
+
+**All Pull Requests should be made against `dev` (even _bug fixes_).**
 
 Before submitting a large PR for a new feature or improvement, please create an issue first. This will allow us to discuss the feature before much development effort is put into it. After we've agreed that the feature would fit in the scope of the project, or if the change is small enough to not require an issue, follow these steps to create a PR:
 
 - Make a new branch
 
 ```
-git checkout -b my-fix master
+git checkout -b my-fix dev
 ```
 
 - Make your changes, including test cases if applicable. Make sure to follow the coding guidelines described below.
 - Run `hh_client` and `grunt`, and ensure there are no new errors in the output
+- Run `extra/format.sh` to apply standard formatting
 - Commit your errors with a descriptive message
 
 ```
@@ -38,6 +35,7 @@ git push origin my-fix
 
 - Create a new [Pull Request](https://help.github.com/articles/using-pull-requests/#initiating-the-pull-request)
 - We will review your PR and request changes if necessary.
+- When you make a new commit fixing a requested change, please squash your changes using `git rebase`. You can find more info on how to do this [here](https://help.github.com/articles/about-git-rebase/#an-example-of-using-git-rebase).
 - Once all requested changes have been made, we will merge your pull request.
 
 ## Coding Guidelines
@@ -50,12 +48,15 @@ git push origin my-fix
 - Always run `hh_client` before committing to ensure there are no hack errors
 - Always run `grunt` before committing to ensure there are no JS/SCSS errors
  - `eslint` warnings unrelated to your changes are fine, but there should never be more warnings after a commit than before a commit
+- Always run `extra/format.sh` before committing to ensure standard formatting
 - Don't add extra spaces between parenthesis, i.e. do `foo(1, 2)`, not `foo( 1, 2 )`
 - Always use spaces around binary operators, i.e. `$i = 0`, not `$i=0`
 - Use CamelCase for member variables/functions and snake_case for local variables/global functions
 - Use flow types wherever possible
 
 ## Code of Conduct
+
+Facebook has adopted a Code of Conduct that we expect project participants to adhere to. Please [read the full text](https://code.facebook.com/pages/876921332402685/open-source-code-of-conduct) so that you can understand what actions will and will not be tolerated.
 
 As contributors and maintainers of this project, we pledge to respect all people who contribute through reporting issues, posting feature requests, updating documentation, submitting pull requests or patches, and other activities.
 

@@ -1,13 +1,14 @@
 <?hh // strict
 
-require_once($_SERVER['DOCUMENT_ROOT'] . '/../vendor/autoload.php');
+require_once ($_SERVER['DOCUMENT_ROOT'].'/../vendor/autoload.php');
 
-class LeaderboardModuleViewController {
+class LeaderboardModuleViewController extends ModuleController {
   public async function genRender(): Awaitable<:xhp> {
+    await tr_start();
     $leaderboard_ul = <ul></ul>;
 
     $rank = 1;
-    $leaderboard = await Team::genLeaderboard();
+    $leaderboard = await MultiTeam::genLeaderboard();
     foreach ($leaderboard as $team) {
       $xlink_href = '#icon--badge-'.$team->getLogo();
       $leaderboard_ul->appendChild(
@@ -20,9 +21,11 @@ class LeaderboardModuleViewController {
           </div>
           <div class="player-info">
             <h6>{$team->getName()}</h6>
-            <span class="player-rank">Rank {$rank}</span>
+            <span class="player-rank">{tr('Rank')}&nbsp;{$rank}</span>
             <br></br>
-            <span class="player-score">{strval($team->getPoints())} pts</span>
+            <span class="player-score">
+              {strval($team->getPoints())}&nbsp;{tr('pts')}
+            </span>
           </div>
         </li>
       );
@@ -32,7 +35,7 @@ class LeaderboardModuleViewController {
     return
       <div>
         <header class="module-header">
-          <h6>Leaderboard</h6>
+          <h6>{tr('Leaderboard')}</h6>
         </header>
         <div class="module-content module-scrollable leaderboard-viewmode">
           {$leaderboard_ul}
@@ -43,4 +46,4 @@ class LeaderboardModuleViewController {
 
 /* HH_IGNORE_ERROR[1002] */
 $leaderboard_generated = new LeaderboardModuleViewController();
-echo \HH\Asio\join($leaderboard_generated->genRender());
+$leaderboard_generated->sendRender();
